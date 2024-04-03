@@ -1,8 +1,10 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using Colyseus;
 using System;
 using Unity.VisualScripting;
+using System.Linq;
 
 public class MultiplayerManager : ColyseusManager<MultiplayerManager>
 {
@@ -24,6 +26,7 @@ public class MultiplayerManager : ColyseusManager<MultiplayerManager>
     {
         Dictionary<string, object> data = new Dictionary<string, object>
         {
+            { "login", PlayerSettings.Instance.Login },
             { "skinsCount", playerSkins.Length }
         };
 
@@ -44,6 +47,10 @@ public class MultiplayerManager : ColyseusManager<MultiplayerManager>
 
         _room.State.players.OnAdd += CreateEnemy;
         _room.State.players.OnRemove += RemoveEnemy;
+
+        _room.State.apples.ForEach(CreateApple);
+        _room.State.apples.OnAdd += (key,apple) => CreateApple(apple);
+        _room.State.apples.OnRemove += RemoveApple;
     }
 
     protected override void OnApplicationQuit()
@@ -74,18 +81,22 @@ public class MultiplayerManager : ColyseusManager<MultiplayerManager>
         Quaternion quaternion = Quaternion.identity;
 
         Snake snake = Instantiate(_snakePrefab,position, quaternion);
-        snake.Init(player.d, player.c);
+        snake.Init(player.d, player.c, true);
 
         PlayerAim aim = Instantiate(_palyerAim, position, quaternion);
-        aim.Init(snake.Speed);
+        aim.Init(snake.Head,snake.Speed);
 
         Controller controller = Instantiate(_controllerPrefab);
-        controller.Init(aim,player,snake);
+        controller.Init(_room.SessionId,aim, player,snake);
+
+        AddLeader(_room.SessionId, player);
     }
 
     #endregion
 
     #region Enemy
+    [SerializeField] private NameLabel _nameLabelPrefab;
+    [SerializeField] private Canvas _canvas;
     private Dictionary<string, EnemyController> _enemies = new();
 
     private void CreateEnemy(string key, Player player)
@@ -94,14 +105,22 @@ public class MultiplayerManager : ColyseusManager<MultiplayerManager>
 
         Snake snake = Instantiate(_snakePrefab, position, Quaternion.identity);
         snake.Init(player.d, player.c);
+
+        NameLabel nl = Instantiate(_nameLabelPrefab, position, Quaternion.identity, _canvas.transform);
+        nl.Init(snake.transform, player.login);
+
         EnemyController enemy = snake.AddComponent<EnemyController>();
-        enemy.Init(player,snake);
+        enemy.Init(key,player, snake);
 
         _enemies.Add(key, enemy);
+
+        AddLeader(key, player);
     }
 
     private void RemoveEnemy(string key, Player value)
     {
+        RemoveLeader(key);
+        
         if (_enemies.ContainsKey(key) == false)
         {
             Debug.LogError("This enemy is not exist");
@@ -113,5 +132,84 @@ public class MultiplayerManager : ColyseusManager<MultiplayerManager>
         enemy.Destroy();
     }
 
+    #endregion
+
+    #region Apple
+    [SerializeField] private Apple _applePrefab;
+    private Dictionary<Vector2Float, Apple> _apples = new Dictionary<Vector2Float, Apple>();
+
+    private void CreateApple(Vector2Float vector2Float)
+    {
+        Vector3 position = new Vector3(vector2Float.x,0,vector2Float.z);
+        Apple apple = Instantiate(_applePrefab, position, Quaternion.identity);
+        apple.Init(vector2Float);
+        _apples.Add(vector2Float, apple);
+    }
+    
+    private void RemoveApple(int key, Vector2Float vector2Float)
+    {
+        if (_apples.ContainsKey(vector2Float) == false) return;
+
+        _apples.Remove(vector2Float);
+        _apples[vector2Float].Destroy();
+    }
+
+    #endregion
+
+    #region LeaderBoard
+    [SerializeField] private Text _text;
+
+    private class LoginScorePair
+    {
+        public string login;
+        public float score;
+    }
+
+    Dictionary<string, LoginScorePair> _leaders = new Dictionary<string, LoginScorePair>();
+
+    private void AddLeader(string sessionID, Player player)
+    {
+        if (_leaders.ContainsKey(sessionID)) return;
+
+        _leaders.Add(sessionID, new LoginScorePair
+        {
+            login = player.login,
+            score = player.score
+        });
+
+        UpdateBoard();
+    }
+
+    private void RemoveLeader(string sessionID)
+    {
+        if (_leaders.ContainsKey(sessionID) == false) return;
+        _leaders.Remove(sessionID);
+
+        UpdateBoard();
+    }
+
+    public void UpdateScore(string sessionID, int score)
+    {
+        if (_leaders.ContainsKey(sessionID) == false) return;
+
+        _leaders[sessionID].score = score;
+        UpdateBoard();
+    }
+
+    private void UpdateBoard()
+    {
+        int topCount = Mathf.Clamp(_leaders.Count,0,8);
+        var top8 = _leaders.OrderByDescending(pair => pair.Value.score).Take(topCount);
+
+        string text = "";
+        int i = 1;
+        foreach (var item in top8)
+        {
+            text += $"{i}. {item.Value.login}: {item.Value.score}\n";
+            i++;
+        }
+
+        _text.text = text;
+    }
     #endregion
 }

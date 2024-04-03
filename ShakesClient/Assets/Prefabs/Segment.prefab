@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 2061759816438456646}
   - component: {fileID: 7013290780908254868}
   - component: {fileID: 4689709206585930743}
+  - component: {fileID: -3202575129540382834}
   m_Layer: 0
   m_Name: Segment
   m_TagString: Untagged
@@ -69,6 +70,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _meshRenderers:
   - {fileID: 2758076406330880051}
+--- !u!114 &-3202575129540382834
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3426349194034643230}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cec9579ab72bd4b458a217af6e9b4494, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _deathParticle: {fileID: 6337447475170569117, guid: f18bc8e86746677419b9e0340a6aa844,
+    type: 3}
 --- !u!1001 &7421129110599000012
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -127,10 +142,20 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -4856336772789610261, guid: 6f36cd16b6c365f4cad37fb84deec7ec,
+        type: 3}
+      propertyPath: m_Layer
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 6f36cd16b6c365f4cad37fb84deec7ec,
         type: 3}
       propertyPath: m_Name
       value: Detail
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 6f36cd16b6c365f4cad37fb84deec7ec,
+        type: 3}
+      propertyPath: m_Layer
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 6f36cd16b6c365f4cad37fb84deec7ec,
         type: 3}

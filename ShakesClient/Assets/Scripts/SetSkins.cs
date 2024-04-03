@@ -12,5 +12,10 @@ public class SetSkins : MonoBehaviour
         {
             _meshRenderers[i].material = material;
         }
+
+        if (TryGetComponent(out DeathParticle deathParticle))
+        {
+            deathParticle.SetDestroyParticleSystemMaterial(material);
+        }
     }
 }

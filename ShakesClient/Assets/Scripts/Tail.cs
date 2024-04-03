@@ -13,9 +13,15 @@ public class Tail : MonoBehaviour
     private List<Quaternion> _rotationHistory = new();
     private List<Transform> _details = new();
     private int _skinIndex = 0;
+    private int _playerLayer;
+    private bool _isPlayer;
 
-    public void Init(Transform head, float speed, int detailCount, int skinIndex)
+    public void Init(Transform head, float speed, int detailCount, int skinIndex, int playerLayer, bool isPlayer)
     {
+        _playerLayer = playerLayer;
+        _isPlayer = isPlayer;
+        if (isPlayer) SetPlayerLayer(gameObject);
+
         _head = head;
         _snakeSpeed = speed;
         _skinIndex = skinIndex;
@@ -28,6 +34,16 @@ public class Tail : MonoBehaviour
 
         SetDetailCount(detailCount);
         GetComponent<SetSkins>().Set(MultiplayerManager.Instance.playerSkins[_skinIndex]);
+    }
+
+    private void SetPlayerLayer(GameObject gameObject)
+    {
+        gameObject.layer = _playerLayer;
+        var childrens = GetComponentsInChildren<Transform>();
+        for (int i = 0; i < childrens.Length; i++)
+        {
+            childrens[i].gameObject.layer = _playerLayer;
+        }
     }
 
     public void SetDetailCount(int detailCount)
@@ -53,6 +69,8 @@ public class Tail : MonoBehaviour
         Vector3 position = _details[_details.Count - 1].position;
         Quaternion rotation = _details[_details.Count - 1].rotation;
         Transform detail = Instantiate(_detailPrefab, position, rotation);
+        if (_isPlayer) SetPlayerLayer(detail.gameObject);
+
         detail.GetComponent<SetSkins>().Set(MultiplayerManager.Instance.playerSkins[_skinIndex]);
         _details.Insert(0, detail);
         _positionHistory.Add(position);

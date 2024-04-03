@@ -45,6 +45,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8d68c39868054ef4093effb5edbebbed, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _collisionLayer:
+    serializedVersion: 2
+    m_Bits: 64
+  _overlapRadius: 0.5
   _rotateSpeed: 90
 --- !u!1 &7787780897269781067
 GameObject:

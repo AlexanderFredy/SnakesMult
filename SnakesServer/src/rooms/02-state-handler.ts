@@ -1,21 +1,47 @@
 import { Room, Client } from "colyseus";
-import { Schema, type, MapSchema } from "@colyseus/schema";
+import { Schema, type, MapSchema, ArraySchema } from "@colyseus/schema";
 
-export class Player extends Schema {
+export class Vector2Float extends Schema {
+    @type("uint32") id = 0;
     @type("number") x = Math.floor(Math.random() * 256) - 128;
     @type("number") z = Math.floor(Math.random() * 256) - 128;
-    @type("uint8") d = 2;
+}
+
+export class Player extends Schema {
+    @type("string") login = "";
+    @type("number") x = Math.floor(Math.random() * 256) - 128;
+    @type("number") z = Math.floor(Math.random() * 256) - 128;
+    @type("uint8") d = 0;
+    @type("uint16") score = 0;
     @type("uint8") c = 0; 
 }
 
 export class State extends Schema {
-    @type({ map: Player })
-    players = new MapSchema<Player>();
+    @type({ map: Player }) players = new MapSchema<Player>();
+    @type([ Vector2Float ]) apples = new ArraySchema<Vector2Float>();
 
-    something = "This attribute won't be sent to the client-side";
+    appleLastId = 0;
 
-    createPlayer(sessionId: string,skin:number) {
+    CreateApple(){
+        const apple = new Vector2Float();
+        apple.id = this.appleLastId++;
+        this.apples.push(new Vector2Float());
+    }
+
+    collectApple(player: Player, data: any){
+        const apple = this.apples.find((value) => value.id === data.id);
+        if (apple === undefined) return;
+
+        apple.x = Math.floor(Math.random() * 256) - 128;
+        apple.z = Math.floor(Math.random() * 256) - 128;
+
+        player.score++;
+        player.d = Math.round(player.score/3);
+    }
+
+    createPlayer(sessionId: string,skin:number,login) {
         const player = new Player();
+        player.login = login;
         player.c = skin;
 
         this.players.set(sessionId, player);
@@ -34,6 +60,7 @@ export class State extends Schema {
 export class StateHandlerRoom extends Room<State> {
     maxClients = 6;
     skinIndexes: number[] = [0];
+    startAppleCount = 100;
 
     mixArray(arr:any){
         var currentIndex = arr.length;
@@ -49,6 +76,7 @@ export class StateHandlerRoom extends Room<State> {
     }
 
     onCreate (options) {
+        this.maxClients = options.skinsCount;
         for (var i = 1; i < options.skinsCount; i++){
             this.skinIndexes.push(i);
         }
@@ -61,15 +89,24 @@ export class StateHandlerRoom extends Room<State> {
         this.onMessage("move", (client, data) => {
             this.state.movePlayer(client.sessionId, data);
         });
+
+        this.onMessage("collect", (client, data) => {
+            const player = this.state.players.get(client.sessionId);
+            this.state.collectApple(player, data);
+        });
+
+        for (var i = 0; i < this.startAppleCount; i++){
+            this.state.CreateApple();
+        }
     }
 
     onAuth(client, options, req) {
         return true;
     }
 
-    onJoin (client: Client) {
+    onJoin (client: Client,data) {
         const skin = this.skinIndexes[this.clients.length-1];
-        this.state.createPlayer(client.sessionId,skin);
+        this.state.createPlayer(client.sessionId,skin,data.login);
     }
 
     onLeave (client) {
