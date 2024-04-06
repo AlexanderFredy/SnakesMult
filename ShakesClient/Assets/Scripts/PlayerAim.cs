@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using UnityEngine;
 
 public class PlayerAim : MonoBehaviour
@@ -9,6 +10,7 @@ public class PlayerAim : MonoBehaviour
     private Transform _snakeHead;
     private Vector3 _targetDirection = Vector3.forward;
     private float _speed;
+    private bool isAlive = true;
 
     public void Init(Transform snakeHead,float speed)
     {
@@ -19,6 +21,8 @@ public class PlayerAim : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (!isAlive) return;
+
         Rotate();
         Move();
         CheckExit();
@@ -26,6 +30,8 @@ public class PlayerAim : MonoBehaviour
 
     private void FixedUpdate()
     {
+        if (!isAlive) return;
+
         CheckCollision();
     }
 
@@ -46,18 +52,54 @@ public class PlayerAim : MonoBehaviour
                     float enemyAngle = Vector3.Angle(_snakeHead.position - enemy.position, enemy.forward);
                     if (playerAngle < enemyAngle + 5)
                     {
-                        GameOver();
+                        Respawn();
                     }
                 } else
-                    GameOver();
+                    Respawn();
             }
         }
     }
 
-    private void GameOver()
+    private async void Respawn()
     {
-        FindAnyObjectByType<Controller>().Destroy();
-        Destroy(gameObject);
+        //FindAnyObjectByType<Controller>().Destroy();
+        //Destroy(gameObject);
+
+        isAlive = false;
+
+        Snake snake = _snakeHead.GetComponentInParent<Snake>();
+        Tail tail = snake.Tail;
+        tail.SetDetailCount(0);
+
+        snake.GetComponent<DeathParticle>().ShowDestroy();
+
+        SetVisibility(transform,false);
+        SetVisibility(_snakeHead, false);
+        SetVisibility(tail.transform, false);
+
+        await Task.Delay(2000);
+
+        var newPosition = new Vector3(UnityEngine.Random.Range(-64, 64), 0, UnityEngine.Random.Range(-64, 64));
+        transform.position = newPosition;
+        snake.transform.position = newPosition;
+        tail.transform.position = newPosition;
+
+        MultiplayerManager.Instance.SendMessage("resetDetailCount",null);
+
+        SetVisibility(transform, true);
+        SetVisibility(_snakeHead, true);
+        SetVisibility(tail.transform, true);
+
+        isAlive = true;
+    }
+
+    private void SetVisibility(Transform part, bool isVision)
+    {
+        MeshRenderer[] renderers = part.GetComponentsInChildren<MeshRenderer>();
+        foreach (MeshRenderer renderer in renderers)
+        {
+            renderer.enabled = isVision;
+        }
     }
 
     private void Rotate()
@@ -74,7 +116,7 @@ public class PlayerAim : MonoBehaviour
     private void CheckExit()
     {
         if (Math.Abs(_snakeHead.position.x) > 128 || Math.Abs(_snakeHead.position.z) > 128)
-            GameOver();
+            Respawn();
     }
 
 

@@ -22,7 +22,7 @@ public class Apple : MonoBehaviour
                 case "x":
                     position.x = (float)change.Value;
                     break;
-                case "y":
+                case "z":
                     position.z = (float)change.Value;
                     break;
                 default:

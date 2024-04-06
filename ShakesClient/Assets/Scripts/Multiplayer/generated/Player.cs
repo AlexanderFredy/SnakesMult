@@ -23,7 +23,10 @@ public partial class Player : Schema {
 	[Type(4, "uint16")]
 	public ushort score = default(ushort);
 
-	[Type(5, "uint8")]
+	[Type(5, "uint16")]
+	public ushort appleCollected = default(ushort);
+
+	[Type(6, "uint8")]
 	public byte c = default(byte);
 }
 

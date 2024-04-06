@@ -35,9 +35,16 @@ public class Controller : MonoBehaviour
     // Update is called once per frame
     private void Update()
     {
-        if(Input.GetMouseButton(0))
+        if (Application.isMobilePlatform)
         {
-            MoveCursor();
+            if (Input.touchCount > 0)
+            {
+                MoveCursor(Input.GetTouch(0).position);
+                _playerAim.SetTargetDirection(_cursor.position);
+            }            
+        } else if (Input.GetMouseButton(0))
+        {
+            MoveCursor(Input.mousePosition);
             _playerAim.SetTargetDirection(_cursor.position);
         }
 
@@ -57,9 +64,9 @@ public class Controller : MonoBehaviour
         _multiplayerManager.SendMessage("move", data);
     }
 
-    private void MoveCursor()
+    private void MoveCursor(Vector3 pointerPosition)
     {
-        Ray ray = _camera.ScreenPointToRay(Input.mousePosition);
+        Ray ray = _camera.ScreenPointToRay(pointerPosition);
         _plane.Raycast(ray, out float distance);
         Vector3 point = ray.GetPoint(distance);
 

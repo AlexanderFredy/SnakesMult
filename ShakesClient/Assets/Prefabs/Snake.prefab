@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 5046958494084138748}
   - component: {fileID: 1409509238125298703}
   - component: {fileID: 5201541489380779461}
-  - component: {fileID: 6105488219129271263}
+  - component: {fileID: 7765764751530770000}
   m_Layer: 0
   m_Name: Snake
   m_TagString: Untagged
@@ -71,7 +71,7 @@ MonoBehaviour:
   - {fileID: 8174643205030114355}
   - {fileID: 708514124959643261}
   - {fileID: 2922893515751625721}
---- !u!114 &6105488219129271263
+--- !u!114 &7765764751530770000
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

@@ -10,7 +10,7 @@ public class Snake : MonoBehaviour
     [field: SerializeField] public Transform Head { get; private set; }
     [SerializeField] private float _speed = 2f;
 
-    private Tail _tail;
+    public Tail Tail {get; private set; }
 
     private Vector3 _targetDirection = Vector3.forward;
 
@@ -26,20 +26,20 @@ public class Snake : MonoBehaviour
             }
         }
                
-        _tail = Instantiate(_tailPrefab, transform.position, Quaternion.identity);
-        _tail.Init(Head, _speed, detailCount, skinIndex, _playerLayer, isPlayer);
+        Tail = Instantiate(_tailPrefab, transform.position, Quaternion.identity);
+        Tail.Init(Head, _speed, detailCount, skinIndex, _playerLayer, isPlayer);
 
         GetComponent<SetSkins>().Set(MultiplayerManager.Instance.playerSkins[skinIndex]);        
     }
 
     public void SetDetailCount(int detailCount)
     { 
-        _tail.SetDetailCount(detailCount);
+        Tail.SetDetailCount(detailCount);
     }
 
     public void Destroy()
     {
-        _tail.Destroy();
+        Tail.Destroy();
         Destroy(gameObject);
     }
 

@@ -9,10 +9,11 @@ export class Vector2Float extends Schema {
 
 export class Player extends Schema {
     @type("string") login = "";
-    @type("number") x = Math.floor(Math.random() * 256) - 128;
-    @type("number") z = Math.floor(Math.random() * 256) - 128;
+    @type("number") x = Math.floor(Math.random() * 128) - 64;
+    @type("number") z = Math.floor(Math.random() * 128) - 64;
     @type("uint8") d = 0;
     @type("uint16") score = 0;
+    @type("uint16") appleCollected = 0;
     @type("uint8") c = 0; 
 }
 
@@ -24,8 +25,9 @@ export class State extends Schema {
 
     CreateApple(){
         const apple = new Vector2Float();
-        apple.id = this.appleLastId++;
-        this.apples.push(new Vector2Float());
+        apple.id = this.appleLastId;
+        this.appleLastId++;
+        this.apples.push(apple);
     }
 
     collectApple(player: Player, data: any){
@@ -35,8 +37,14 @@ export class State extends Schema {
         apple.x = Math.floor(Math.random() * 256) - 128;
         apple.z = Math.floor(Math.random() * 256) - 128;
 
-        player.score++;
-        player.d = Math.round(player.score/3);
+        player.score += Math.round(player.d/2);
+        player.appleCollected++;
+        if (player.appleCollected >= player.d)
+        {
+            player.d++;
+            player.appleCollected -= player.d;
+        }
+           
     }
 
     createPlayer(sessionId: string,skin:number,login) {
@@ -60,7 +68,8 @@ export class State extends Schema {
 export class StateHandlerRoom extends Room<State> {
     maxClients = 6;
     skinIndexes: number[] = [0];
-    startAppleCount = 100;
+    startAppleCount = 200;
+    gameDuration = 600;
 
     mixArray(arr:any){
         var currentIndex = arr.length;
@@ -75,6 +84,19 @@ export class StateHandlerRoom extends Room<State> {
         }
     }
 
+    Delay(timeInMillis: number): Promise<void> {
+        return new Promise((resolve) => setTimeout(() => resolve(), timeInMillis));
+    }
+
+    async StartCountDown(duration:number): Promise<void> {
+        var lastTime = duration;
+        while (lastTime >= 0) {
+            this.broadcast("time",lastTime);
+            await this.Delay(1000);
+            lastTime--;         
+        }
+      }
+
     onCreate (options) {
         this.maxClients = options.skinsCount;
         for (var i = 1; i < options.skinsCount; i++){
@@ -82,7 +104,9 @@ export class StateHandlerRoom extends Room<State> {
         }
         this.mixArray(this.skinIndexes);
 
+        this.StartCountDown(this.gameDuration);
         console.log("StateHandlerRoom created!", options);
+        
 
         this.setState(new State());
 
@@ -93,6 +117,11 @@ export class StateHandlerRoom extends Room<State> {
         this.onMessage("collect", (client, data) => {
             const player = this.state.players.get(client.sessionId);
             this.state.collectApple(player, data);
+        });
+
+        this.onMessage("resetDetailCount", (client) => {
+            const player = this.state.players.get(client.sessionId);
+            player.d = 0;
         });
 
         for (var i = 0; i < this.startAppleCount; i++){

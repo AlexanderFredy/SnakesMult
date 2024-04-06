@@ -5,11 +5,16 @@ using Colyseus;
 using System;
 using Unity.VisualScripting;
 using System.Linq;
+using TMPro;
 
 public class MultiplayerManager : ColyseusManager<MultiplayerManager>
 {
     #region Server
+    [Header("Visual elements")]
     [SerializeField] public Material[] playerSkins;
+    [SerializeField] private TextMeshProUGUI _counterDown;
+    [SerializeField] private Indicator indicatorPrefab;
+    [SerializeField] private RectTransform _indicatorContainer;
 
     private const string GameRoomName = "state_handler";
     private ColyseusRoom<State> _room;
@@ -32,6 +37,19 @@ public class MultiplayerManager : ColyseusManager<MultiplayerManager>
 
         _room = await client.JoinOrCreate<State>(GameRoomName,data);
         _room.OnStateChange += OnChange;
+
+        _room.OnMessage<string>("time", ChangeTime);
+    }
+
+    private void ChangeTime(string seconds)
+    {
+        if (int.TryParse(seconds, out int s))
+        {
+            TimeSpan time = TimeSpan.FromSeconds(s);
+            _counterDown.text = time.ToString(@"mm\:ss");
+        }
+        else
+            _counterDown.text = "00:00";
     }
 
     private void OnChange(State state, bool isFirstState)
@@ -39,10 +57,12 @@ public class MultiplayerManager : ColyseusManager<MultiplayerManager>
         if (isFirstState == false) return;
         _room.OnStateChange -= OnChange;
 
+        CreatePlayer(state.players[_room.SessionId]);
+
         state.players.ForEach((key, player) =>
         {
-            if (key == _room.SessionId) CreatePlayer(player);
-            else CreateEnemy(key, player);
+            if (key != _room.SessionId) CreateEnemy(key, player);//CreatePlayer(player);
+            //else CreateEnemy(key, player);
         });
 
         _room.State.players.OnAdd += CreateEnemy;
@@ -71,25 +91,29 @@ public class MultiplayerManager : ColyseusManager<MultiplayerManager>
     #endregion
 
     #region Player
+    [Header("Logic")]
     [SerializeField] private PlayerAim _palyerAim;
     [SerializeField] private Controller _controllerPrefab;
     [SerializeField] private Snake _snakePrefab;
- 
+    private Snake playerSnake;
+
     private void CreatePlayer(Player player)
     {
         Vector3 position = new Vector3(player.x,0,player.z);
         Quaternion quaternion = Quaternion.identity;
 
-        Snake snake = Instantiate(_snakePrefab,position, quaternion);
-        snake.Init(player.d, player.c, true);
+        playerSnake = Instantiate(_snakePrefab,position, quaternion);
+        playerSnake.Init(player.d, player.c, true);
 
         PlayerAim aim = Instantiate(_palyerAim, position, quaternion);
-        aim.Init(snake.Head,snake.Speed);
+        aim.Init(playerSnake.Head,playerSnake.Speed);
 
         Controller controller = Instantiate(_controllerPrefab);
-        controller.Init(_room.SessionId,aim, player,snake);
+        controller.Init(_room.SessionId,aim, player,playerSnake);
 
         AddLeader(_room.SessionId, player);
+
+        //Instantiate(indicatorPrefab).Init(snake.transform, GameObject.Find("TestTarget").transform, _indicatorContainer, player);
     }
 
     #endregion
@@ -108,6 +132,8 @@ public class MultiplayerManager : ColyseusManager<MultiplayerManager>
 
         NameLabel nl = Instantiate(_nameLabelPrefab, position, Quaternion.identity, _canvas.transform);
         nl.Init(snake.transform, player.login);
+
+        Instantiate(indicatorPrefab).Init(playerSnake.transform, snake.transform, _indicatorContainer, player);
 
         EnemyController enemy = snake.AddComponent<EnemyController>();
         enemy.Init(key,player, snake);
@@ -157,6 +183,7 @@ public class MultiplayerManager : ColyseusManager<MultiplayerManager>
     #endregion
 
     #region LeaderBoard
+    [Header("Leader board")]
     [SerializeField] private Text _text;
 
     private class LoginScorePair
@@ -212,4 +239,5 @@ public class MultiplayerManager : ColyseusManager<MultiplayerManager>
         _text.text = text;
     }
     #endregion
+
 }
