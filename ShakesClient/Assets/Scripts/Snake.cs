@@ -1,14 +1,13 @@
-using System.Runtime.InteropServices.WindowsRuntime;
 using UnityEngine;
 
 public class Snake : MonoBehaviour
 {
-    public float Speed { get { return _speed; } }
+    [field:SerializeField] public float Speed { get; private set; }
 
     [SerializeField] private int _playerLayer = 6;
     [SerializeField] private Tail _tailPrefab;
     [field: SerializeField] public Transform Head { get; private set; }
-    [SerializeField] private float _speed = 2f;
+    //private float _speed;
 
     public Tail Tail {get; private set; }
 
@@ -27,7 +26,7 @@ public class Snake : MonoBehaviour
         }
                
         Tail = Instantiate(_tailPrefab, transform.position, Quaternion.identity);
-        Tail.Init(Head, _speed, detailCount, skinIndex, _playerLayer, isPlayer);
+        Tail.Init(Head, Speed, detailCount, skinIndex, _playerLayer, isPlayer);
 
         GetComponent<SetSkins>().Set(MultiplayerManager.Instance.playerSkins[skinIndex]);        
     }
@@ -50,7 +49,7 @@ public class Snake : MonoBehaviour
 
     private void Move()
     {
-        transform.position += Head.forward * _speed * Time.deltaTime;
+        transform.position += Head.forward * Speed * Time.deltaTime;
     }
 
     public void SetRotation(Vector3 pointToLook)

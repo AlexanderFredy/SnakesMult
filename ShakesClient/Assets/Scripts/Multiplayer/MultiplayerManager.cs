@@ -15,6 +15,8 @@ public class MultiplayerManager : ColyseusManager<MultiplayerManager>
     [SerializeField] private TextMeshProUGUI _counterDown;
     [SerializeField] private Indicator indicatorPrefab;
     [SerializeField] private RectTransform _indicatorContainer;
+    [SerializeField] private GameObject _gameOverPanel;
+    [SerializeField] private TextMeshProUGUI _winnersText;
 
     private const string GameRoomName = "state_handler";
     private ColyseusRoom<State> _room;
@@ -39,6 +41,32 @@ public class MultiplayerManager : ColyseusManager<MultiplayerManager>
         _room.OnStateChange += OnChange;
 
         _room.OnMessage<string>("time", ChangeTime);
+        _room.OnMessage<string>("GameOver", ChooseWinners);
+        _room.OnMessage<string>("enemyDead", ShowEnemyDeath);
+        _room.OnMessage<string>("enemyAlive", ShowEnemySpawn);
+    }
+
+    private void ChooseWinners(string data)
+    {
+        string winnersText = "";
+        
+        var myList = _leaders.OrderByDescending(pair => pair.Value.score);
+        float maxScore = myList.First().Value.score;
+
+        foreach (var item in myList)
+        {
+            if (item.Value.score < maxScore) break;
+            winnersText += $"{item.Value.login}\n";
+        }
+
+        Time.timeScale = 0f;
+        _winnersText.text = winnersText;
+        _gameOverPanel.SetActive(true);
+    }
+
+    public void QuitGame()
+    {
+        Application.Quit();
     }
 
     private void ChangeTime(string seconds)
@@ -106,7 +134,7 @@ public class MultiplayerManager : ColyseusManager<MultiplayerManager>
         playerSnake.Init(player.d, player.c, true);
 
         PlayerAim aim = Instantiate(_palyerAim, position, quaternion);
-        aim.Init(playerSnake.Head,playerSnake.Speed);
+        aim.Init(_room.SessionId,playerSnake.Head,playerSnake.Speed);
 
         Controller controller = Instantiate(_controllerPrefab);
         controller.Init(_room.SessionId,aim, player,playerSnake);
@@ -156,6 +184,22 @@ public class MultiplayerManager : ColyseusManager<MultiplayerManager>
         EnemyController enemy = _enemies[key];
         _enemies.Remove(key);
         enemy.Destroy();
+    }
+
+    private void ShowEnemyDeath(string playerID)
+    {
+        if (_enemies.ContainsKey(playerID))
+        {
+            _enemies[playerID].ShowDeath();
+        }
+    }
+
+    private void ShowEnemySpawn(string playerID)
+    {
+        if (_enemies.ContainsKey(playerID))
+        {
+            _enemies[playerID].ShowLife();
+        }
     }
 
     #endregion

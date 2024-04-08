@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 
@@ -11,9 +12,11 @@ public class PlayerAim : MonoBehaviour
     private Vector3 _targetDirection = Vector3.forward;
     private float _speed;
     private bool isAlive = true;
+    private string _clientID;
 
-    public void Init(Transform snakeHead,float speed)
+    public void Init(string sessionID,Transform snakeHead,float speed)
     {
+        _clientID = sessionID;
         _snakeHead = snakeHead;
         _speed = speed;
     }
@@ -77,6 +80,12 @@ public class PlayerAim : MonoBehaviour
         SetVisibility(_snakeHead, false);
         SetVisibility(tail.transform, false);
 
+        Dictionary<string, object> data = new Dictionary<string, object>()
+        {
+            {"id",_clientID}
+        };
+        MultiplayerManager.Instance.SendMessage("respawn", data);
+
         await Task.Delay(2000);
 
         var newPosition = new Vector3(UnityEngine.Random.Range(-64, 64), 0, UnityEngine.Random.Range(-64, 64));
@@ -84,11 +93,11 @@ public class PlayerAim : MonoBehaviour
         snake.transform.position = newPosition;
         tail.transform.position = newPosition;
 
-        MultiplayerManager.Instance.SendMessage("resetDetailCount",null);
-
         SetVisibility(transform, true);
         SetVisibility(_snakeHead, true);
         SetVisibility(tail.transform, true);
+
+        MultiplayerManager.Instance.SendMessage("enemyAlive", data);
 
         isAlive = true;
     }

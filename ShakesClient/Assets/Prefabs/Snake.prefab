@@ -47,11 +47,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: da57a4aa283714642a4fb9a78458ca1e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  <Speed>k__BackingField: 4
   _playerLayer: 6
   _tailPrefab: {fileID: 9194905671574327845, guid: 2962d713825927e40ad0f51f670886b0,
     type: 3}
   <Head>k__BackingField: {fileID: 738771665368331470}
-  _speed: 5
 --- !u!114 &5201541489380779461
 MonoBehaviour:
   m_ObjectHideFlags: 0

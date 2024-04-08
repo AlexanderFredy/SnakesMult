@@ -1,5 +1,6 @@
 using Colyseus.Schema;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 
 public class EnemyController : MonoBehaviour
@@ -7,6 +8,7 @@ public class EnemyController : MonoBehaviour
     private string _clientID;
     private Player _player;
     private Snake _snake;
+    public bool IsAlive { get; private set; } = true;
     public void Init(string clientID, Player player, Snake snake)
     {
         _clientID = clientID;
@@ -42,6 +44,39 @@ public class EnemyController : MonoBehaviour
             }
 
             _snake.SetRotation(position);
+        }
+    }
+
+    public void ShowDeath()
+    {
+        IsAlive = false;
+
+        _snake.Tail.SetDetailCount(0);
+
+        _snake.GetComponent<DeathParticle>().ShowDestroy();
+
+        SetVisibility(transform, false);
+        SetVisibility(_snake.transform, false);
+        SetVisibility(_snake.Tail.transform, false);
+    }
+
+    public async void ShowLife()
+    {
+        await Task.Delay(1000);
+
+        SetVisibility(transform, true);
+        SetVisibility(_snake.transform, true);
+        SetVisibility(_snake.Tail.transform, true);
+
+        IsAlive = true;
+    }
+
+    private void SetVisibility(Transform part, bool isVision)
+    {
+        MeshRenderer[] renderers = part.GetComponentsInChildren<MeshRenderer>();
+        foreach (MeshRenderer renderer in renderers)
+        {
+            renderer.enabled = isVision;
         }
     }
 

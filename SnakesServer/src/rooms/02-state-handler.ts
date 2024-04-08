@@ -95,6 +95,7 @@ export class StateHandlerRoom extends Room<State> {
             await this.Delay(1000);
             lastTime--;         
         }
+        this.broadcast("GameOver");
       }
 
     onCreate (options) {
@@ -119,9 +120,14 @@ export class StateHandlerRoom extends Room<State> {
             this.state.collectApple(player, data);
         });
 
-        this.onMessage("resetDetailCount", (client) => {
+        this.onMessage("respawn", (client,data) => {
+            this.broadcast("enemyDead",data.id,{except: client});
             const player = this.state.players.get(client.sessionId);
             player.d = 0;
+        });
+
+        this.onMessage("enemyAlive", (client,data) => {
+            this.broadcast("enemyAlive",data.id,{except: client});
         });
 
         for (var i = 0; i < this.startAppleCount; i++){
